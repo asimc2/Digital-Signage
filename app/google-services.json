@@ -1,0 +1,98 @@
+{
+  "project_info": {
+    "project_number": "580133661529",
+    "firebase_url": "https://clear2you-default-rtdb.firebaseio.com",
+    "project_id": "clear2you",
+    "storage_bucket": "clear2you.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:580133661529:android:71ccded560347e503dfa48",
+        "android_client_info": {
+          "package_name": "com.cleartwo.admin.c2ticketsystem"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "580133661529-t8dj95qrakk0uicukg27rjerl0r2b5q6.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB4WUz3b54ErooIYR7wu0bf_whQdHEQrzU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "580133661529-t8dj95qrakk0uicukg27rjerl0r2b5q6.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:580133661529:android:f14425ed93ad51453dfa48",
+        "android_client_info": {
+          "package_name": "com.cleartwo.clear2you"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "580133661529-t8dj95qrakk0uicukg27rjerl0r2b5q6.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB4WUz3b54ErooIYR7wu0bf_whQdHEQrzU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "580133661529-t8dj95qrakk0uicukg27rjerl0r2b5q6.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:580133661529:android:7e64f97aed8449ec3dfa48",
+        "android_client_info": {
+          "package_name": "com.cleartwo.tvapplication"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "580133661529-t8dj95qrakk0uicukg27rjerl0r2b5q6.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB4WUz3b54ErooIYR7wu0bf_whQdHEQrzU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "580133661529-t8dj95qrakk0uicukg27rjerl0r2b5q6.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
