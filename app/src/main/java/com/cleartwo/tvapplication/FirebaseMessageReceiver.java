@@ -6,15 +6,20 @@ import android.annotation.SuppressLint;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
+import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.os.Build;
+import android.util.Log;
 import android.widget.RemoteViews;
 
 import androidx.core.app.NotificationCompat;
 
 import com.google.firebase.messaging.FirebaseMessagingService;
 import com.google.firebase.messaging.RemoteMessage;
+
+import java.util.Objects;
 
 @SuppressLint("MissingFirebaseInstanceTokenRefresh")
 public class FirebaseMessageReceiver
@@ -23,6 +28,7 @@ public class FirebaseMessageReceiver
     // Override onMessageReceived() method to extract the
     // title and
     // body from the message passed in FCM
+    @SuppressLint("LongLogTag")
     @Override
     public void
     onMessageReceived(RemoteMessage remoteMessage) {
@@ -32,14 +38,37 @@ public class FirebaseMessageReceiver
         if (remoteMessage.getNotification() != null) {
 //            Const.mainActivity.methodInit("android.resource://" + getPackageName() + "/" + R.raw.archies1);
 //            Const.mainActivity.checkSchedule();
-            schedule(Const.mainActivity.apiInterface, Const.mainActivity, false);
+            Log.e("refetch_schedule", remoteMessage.getNotification().getTitle());
+
+            if (remoteMessage.getNotification().getBody() != null) {
+                if (remoteMessage.getNotification().getBody().equals("refetch_schedule")) {
+                    Const.mainActivity.currentplaylist = "";
+                    Const.mainActivity.order = 1;
+                    schedule(Const.mainActivity.apiInterface, Const.mainActivity);
+                } else if (remoteMessage.getNotification().getBody().equals("restart_app")) {
+                    triggerRebirth(Const.mainActivity);
+                } else if (remoteMessage.getNotification().getBody().equals("shutdown_app")) {
+                    triggerFinish(Const.mainActivity);
+                } else if (remoteMessage.getNotification().getBody().equals("update_app")) {
+                    Log.d("TAG", "From: " + remoteMessage.getFrom());
+                }
+            }
             // Since the notification is received directly from
             // FCM, the title and the body can be fetched
             // directly as below.
-//            showNotification(
-//                    remoteMessage.getNotification().getTitle(),
-//                    remoteMessage.getNotification().getBody());
+            Log.e("remoteMessage.getNotification().getTitle()", remoteMessage.getNotification().getTitle());
+            Log.e("remoteMessage.getNotification().getBody()", remoteMessage.getNotification().getBody());
         }
+    }
+
+    public static void triggerRebirth(Context context) {
+        Const.mainActivity.currentplaylist = "";
+        Const.mainActivity.order = 1;
+        Const.mainActivity.timerSchedule();
+    }
+
+    public static void triggerFinish(Context context) {
+        Const.mainActivity.finish();
     }
 
     // Method to get the custom Design for the display of
@@ -88,17 +117,12 @@ public class FirebaseMessageReceiver
                 .setOnlyAlertOnce(true)
                 .setContentIntent(pendingIntent);
 
-        // A customized design for the notification can be
-        // set only for Android versions 4.1 and above. Thus
         // condition for the same is checked here.
         if (Build.VERSION.SDK_INT
                 >= Build.VERSION_CODES.JELLY_BEAN) {
             builder = builder.setContent(
                     getCustomDesign(title, message));
-        } // If Android Version is lower than Jelly Beans,
-        // customized layout cannot be used and thus the
-        // layout is set as follows
-        else {
+        } else {
             builder = builder.setContentTitle(title)
                     .setContentText(message)
                     .setSmallIcon(R.mipmap.ic_launcher);

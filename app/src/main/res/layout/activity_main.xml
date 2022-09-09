@@ -23,7 +23,56 @@
         android:id="@+id/imageView"
         android:layout_width="match_parent"
         android:background="@android:color/black"
-        android:layout_height="match_parent"/>
+        android:layout_height="match_parent"
+        tools:ignore="ContentDescription" />
+
+    <RelativeLayout
+        android:id="@+id/firstInstall"
+        android:layout_width="match_parent"
+        android:padding="8dp"
+        android:layout_height="match_parent"
+        android:background="@android:color/white">
+
+        <EditText
+            android:id="@+id/unitId"
+            android:layout_width="450dp"
+            android:layout_height="wrap_content"
+            android:layout_centerHorizontal="true"
+            android:gravity="center"
+            android:lines="1"
+            android:hint="Enter your device code"
+            android:textColor="@android:color/black"
+            android:textColorHint="@color/grey">
+        </EditText>
+
+        <Button
+            android:id="@+id/go"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_below="@+id/unitId"
+            android:layout_centerHorizontal="true"
+            android:layout_marginTop="8dp"
+            android:background="@android:color/black"
+            android:text="GO"
+            android:textColor="@android:color/white" />
+
+        <ImageView
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_below="@+id/go"
+            android:src="@mipmap/ic_launcher_foreground"
+            android:layout_above="@+id/clears"
+            tools:ignore="ContentDescription" />
+        <TextView
+            android:id="@+id/clears"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="powerd by ClearTwo: 1.0"
+            android:gravity="center"
+            android:textStyle="bold"
+            android:textColor="@color/black"
+            android:layout_alignParentBottom="true"/>
+    </RelativeLayout>
 
 
 </androidx.constraintlayout.widget.ConstraintLayout>

@@ -1,16 +1,36 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:amazon="http://schemas.amazon.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     package="com.cleartwo.tvapplication"
     tools:ignore="ImpliedTouchscreenHardware,MissingLeanbackLauncher,MissingLeanbackSupport">
 
     <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" tools:node="remove"/>
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.MANAGE_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+
+    <!-- This permission ensures that no other application can intercept your ADM messages. -->
+    <permission
+        android:name="com.cleartwo.tvapplication.permission.RECEIVE_ADM_MESSAGE"
+        android:protectionLevel="signature" />
+    <uses-permission android:name="com.cleartwo.tvapplication.permission.RECEIVE_ADM_MESSAGE" />
+
+    <!-- This permission allows your app access to receive push notifications from ADM. -->
+    <uses-permission android:name="com.amazon.device.messaging.permission.RECEIVE" />
+
+    <!-- ADM uses WAKE_LOCK to keep the processor from sleeping when a message is received. -->
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
 
     <application
         android:allowBackup="true"
+        android:requestLegacyExternalStorage="true"
+        android:largeHeap="true"
+        android:hardwareAccelerated="false"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="@xml/backup_rules"
         android:icon="@mipmap/ic_launcher"
@@ -41,14 +61,45 @@
             </intent-filter>
         </activity>
 
+        <receiver android:name=".BootReceiver"
+            android:exported="true">
+            <intent-filter >
+                <action android:name="android.intent.action.BOOT_COMPLETED"/>
+            </intent-filter>
+        </receiver>
+
         <service android:name=".FirebaseMessageReceiver"
-            android:exported="false"
+            android:exported="true"
             android:directBootAware="true">
             <intent-filter>
                 <action android:name="com.google.firebase.MESSAGING_EVENT" />
             </intent-filter>
         </service>
 
+        <!--  Declare your ADMMessageHandlerBase implementation as a service -->
+        <service android:name=".amazon.SampleADMMessageHandler"
+            android:exported="false" />
+
+        <!--  Declare your ADMMessageHandlerJobBase implementation as a service -->
+        <service android:name=".amazon.SampleADMMessageHandlerJobBase"
+            android:permission="android.permission.BIND_JOB_SERVICE"
+            android:exported="false"
+            tools:ignore="Instantiatable" />
+
+        <amazon:enable-feature
+            android:name="com.amazon.device.messaging"
+            android:required="true"/>
+
+        <receiver
+            android:name=".amazon.SampleADMMessageReceiver"
+            android:permission="com.amazon.device.messaging.permission.SEND"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="com.amazon.device.messaging.intent.REGISTRATION" />
+                <action android:name="com.amazon.device.messaging.intent.RECEIVE" />
+                <category android:name="com.cleartwo.tvapplication"/>
+            </intent-filter>
+        </receiver>
         <!-- Set custom default icon. This is used when no icon is set for incoming notification messages.
      See README(https://goo.gl/l4GJaQ) for more. -->
         <meta-data
@@ -59,6 +110,13 @@
         <meta-data
             android:name="com.google.firebase.messaging.default_notification_color"
             android:resource="@color/purple_500" />
+
+        <meta-data android:name="io.sentry.dsn" android:value="https://f9a3ff2267fe4310a350146079347bdf@o1339111.ingest.sentry.io/6610817" />
+        <!-- Set tracesSampleRate to 1.0 to capture 100% of transactions for performance monitoring.
+           We recommend adjusting this value in production. -->
+        <meta-data android:name="io.sentry.traces.sample-rate" android:value="1.0" />
+        <!-- Enable user interaction tracing to capture transactions for various UI events (such as clicks or scrolls). -->
+        <meta-data android:name="io.sentry.traces.user-interaction.enable" android:value="true" />
     </application>
 
 </manifest>
