@@ -1,10 +1,5 @@
 package com.cleartwo.tvapplication;
 
-import static android.content.ContentValues.TAG;
-
-import static com.cleartwo.tvapplication.Const.DeleteFolder;
-import static com.cleartwo.tvapplication.Const.DeleteRecursive;
-import static com.cleartwo.tvapplication.Const.fileExist;
 import static com.cleartwo.tvapplication.Const.mainActivity;
 import static com.cleartwo.tvapplication.utils.APIClient.UNIID;
 import static com.cleartwo.tvapplication.utils.APIsCall.getUnitID;
@@ -14,14 +9,18 @@ import static com.cleartwo.tvapplication.utils.APIsCall.updatToken;
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
-import androidx.fragment.app.FragmentActivity;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.ActivityCompat;
 
+import android.Manifest;
 import android.annotation.SuppressLint;
 import android.app.NotificationManager;
+import android.app.ProgressDialog;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.media.MediaPlayer;
@@ -29,11 +28,14 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
+import android.provider.Settings;
 import android.util.Log;
-import android.view.Menu;
-import android.view.MenuItem;
+import android.view.Gravity;
 import android.view.View;
 import android.view.WindowManager;
+import android.webkit.WebSettings;
+import android.webkit.WebView;
+import android.webkit.WebViewClient;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
@@ -43,9 +45,7 @@ import android.widget.Toast;
 import android.widget.VideoView;
 
 import com.amazon.device.messaging.ADM;
-import com.amazon.device.messaging.development.ADMManifest;
 import com.cleartwo.tvapplication.amazon.MyServerMsgHandler;
-import com.cleartwo.tvapplication.amazon.SampleADMMessageHandler;
 import com.cleartwo.tvapplication.utils.APIClient;
 import com.cleartwo.tvapplication.utils.APIInterface;
 import com.cleartwo.tvapplication.utils.SharedPrefHelper;
@@ -59,10 +59,14 @@ import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
+import java.util.Objects;
 
 import io.sentry.Sentry;
+import top.ss007.library.DownloadListener;
+import top.ss007.library.DownloadUtil;
+import top.ss007.library.InputParameter;
 
-public class MainActivity extends FragmentActivity {
+public class MainActivity extends AppCompatActivity {
 
     /**
      * Tag for logs.
@@ -73,12 +77,13 @@ public class MainActivity extends FragmentActivity {
      * Catches intents sent from the onMessage() callback to update the UI.
      */
     private BroadcastReceiver msgReceiver;
-
     public Button go;
     public EditText unitId;
+    public TextView clears;
     public View firstInstall;
     public VideoView videoView;
     public ImageView imageView;
+    public WebView webUrl;
     public Uri uri;
     public String currentplaylist = "";
 
@@ -86,11 +91,16 @@ public class MainActivity extends FragmentActivity {
     public int order = 1;
 
     public APIInterface apiInterface;
+    ProgressDialog progressdialog;
+
+//    private AppUpdateManager mAppUpdateManager;
+//    private static final int RC_APP_UPDATE = 11;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        Objects.requireNonNull(getSupportActionBar()).hide();
         Sentry.captureMessage("testing SDK setup");
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         mainActivity = this;
@@ -98,19 +108,22 @@ public class MainActivity extends FragmentActivity {
 
         // initiate a video view
         videoView = (VideoView) findViewById(R.id.simpleVideoView);
-
-        // initiate a video view
         imageView = (ImageView) findViewById(R.id.imageView);
+        webUrl = (WebView) findViewById(R.id.webUrl);
         initView();
+//        startSystemAlertWindowPermission();
+
+        progressdialog = new ProgressDialog(this);
+        progressdialog.setMessage("Downloading files. Please wait...");
+        progressdialog.getWindow().setGravity(Gravity.TOP);
+        WindowManager.LayoutParams params = progressdialog.getWindow().getAttributes();
+        params.y = 100;
+        progressdialog.getWindow().setAttributes(params);
 
         MediaController mediaController = new MediaController(this);
         mediaController.setAnchorView(videoView);
-//        String path = "android.resource://" + getPackageName() + "/" + R.raw.archies1;
-//        uri = Uri.parse(path);
         videoView.setMediaController(null);
-//        videoView.setVideoURI(uri);
         videoView.requestFocus();
-//        videoView.start();
         videoView.setOnPreparedListener(new MediaPlayer.OnPreparedListener() {
             @Override
             public void onPrepared(MediaPlayer mediaPlayer) {
@@ -132,7 +145,9 @@ public class MainActivity extends FragmentActivity {
         });
     }
 
+    @SuppressLint("SetTextI18n")
     public void initView() {
+        storageMethod();
         FirebaseApp.initializeApp(this);
         FirebaseMessaging.getInstance().setAutoInitEnabled(true);
 //        FirebaseMessaging.getInstance().subscribeToTopic("TopicName");
@@ -160,7 +175,8 @@ public class MainActivity extends FragmentActivity {
 
         firstInstall = (View) findViewById(R.id.firstInstall);
         unitId = (EditText) findViewById(R.id.unitId);
-//        unitId.setText("e8dcd7ee-1f67-4e9d-8781-05e9dfb666ce");
+        clears = (TextView) findViewById(R.id.clears);
+        clears.setText("Powered by ClearTwo: " + BuildConfig.VERSION_NAME);
         go = (Button) findViewById(R.id.go);
         go.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -189,17 +205,25 @@ public class MainActivity extends FragmentActivity {
             timerSchedule();
         }
 
-        /* Register app with ADM. */
-        if (Const.isKindle()) {
-            try {
-                register();
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        }
+    }
+
+    private void storageMethod() {
+        double totalSize = new File(getApplicationContext().getFilesDir().getAbsoluteFile().toString()).getTotalSpace();
+        double totMb = totalSize / (1024 * 1024);
+        double availableSize = new File(getApplicationContext().getFilesDir().getAbsoluteFile().toString()).getFreeSpace();
+        double freeMb = availableSize / (1024 * 1024);
+        long freeBytesExternal = new File(getExternalFilesDir(null).toString()).getFreeSpace();
+        int free = (int) (freeBytesExternal / (1024 * 1024));
+        long totaSize = new File(getExternalFilesDir(null).toString()).getTotalSpace();
+        int total = (int) (totaSize / (1024 * 1024));
+        String availableMb = free + "Mb out of " + total + "MB";
+        Log.e("totMb = ", String.valueOf(totMb));
+        Log.e("freeMb = ", String.valueOf(freeMb));
+        Log.e("availableMb = ", availableMb);
     }
 
     public void methodInit(String str) {
+        webUrl.setVisibility(View.GONE);
         runOnUiThread(new Runnable() {
 
             @Override
@@ -218,6 +242,7 @@ public class MainActivity extends FragmentActivity {
     Handler handler = new Handler();
 
     public void iniImage(String str) {
+        webUrl.setVisibility(View.GONE);
         File imgFile = new File(str);
         if (imgFile.exists()) {
             Bitmap myBitmap = BitmapFactory.decodeFile(imgFile.getAbsolutePath());
@@ -227,10 +252,27 @@ public class MainActivity extends FragmentActivity {
         handler.removeCallbacksAndMessages(null);
         handler.postDelayed(new Runnable() {
             public void run() {
-                // yourMethod();
                 fileExecution();
             }
         }, 30000);   //30 seconds
+    }
+
+    @SuppressLint("SetJavaScriptEnabled")
+    public void initUrl(String str, String tm) {
+        webUrl.setVisibility(View.VISIBLE);
+        WebSettings webSettings = webUrl.getSettings();
+        webUrl.setWebViewClient(new WebViewClient());
+        webSettings.setJavaScriptEnabled(true);
+        webUrl.loadUrl(str);
+
+        int time = Integer.parseInt(tm);
+        time = time * 1000;
+        handler.removeCallbacksAndMessages(null);
+        handler.postDelayed(new Runnable() {
+            public void run() {
+                fileExecution();
+            }
+        }, time);   //30 seconds
     }
 
     Handler handler1 = new Handler();
@@ -240,7 +282,6 @@ public class MainActivity extends FragmentActivity {
         checkSchedule();
         handler1.postDelayed(new Runnable() {
             public void run() {
-                // yourMethod();
                 timerSchedule();
             }
         }, 10000);   //10 seconds
@@ -413,8 +454,6 @@ public class MainActivity extends FragmentActivity {
                 setScheduleFile(data.getDefaultplaylist().getId());
             }
         }
-
-//        if (data.getSchedule().getFriday())
     }
 
     public void setScheduleFile(String id) {
@@ -435,10 +474,12 @@ public class MainActivity extends FragmentActivity {
     }
 
     public void fileExecution() {
-//        File file = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS),
-//                "ProfileImage02");
-        File dir = Const.mainActivity.getFilesDir();
-        File file = new File(dir, "my_filename");
+        try {
+            progressdialog.dismiss();
+        } catch (Exception ignored) {
+        }
+
+        File file = new File(getExternalFilesDir(null).getAbsolutePath());
         boolean ifNotFind = true;
         int maxOrder = 0;
         if (reqResponseFile != null) {
@@ -450,17 +491,22 @@ public class MainActivity extends FragmentActivity {
                 }
 
                 if (files.getOrder() == order) {
-                    if (files.getExt().equals("jpg")) {
-                        imageView.setVisibility(View.VISIBLE);
-                        iniImage(file.getAbsolutePath() + "/" + files.getId());
-                    } else {
-                        imageView.setVisibility(View.GONE);
-                        methodInit(file.getAbsolutePath() + "/" + files.getId());
-                    }
                     ifNotFind = false;
                     order += 1;
                     if (order > maxOrder && order > reqResponseFile.size()) {
                         order = 1;
+                    }
+                    if (files.getExt().equals("jpg") || files.getExt().equals("png")) {
+                        setText(imageView, true);
+                        iniImage(file.getAbsolutePath() + "/" + files.getId());
+                    } else if (files.getExt().equals("mkv")) {
+                        setText(imageView, false);
+                        methodInit(file.getAbsolutePath() + "/" + files.getId());
+                    } else if (files.getExt().equals("url")) {
+                        setText(imageView, false);
+                        initUrl(files.getUrl(), files.getTime());
+                    } else {
+                        fileExecution();
                     }
                     break;
                 }
@@ -468,7 +514,11 @@ public class MainActivity extends FragmentActivity {
             }
             if (ifNotFind) {
                 order += 1;
-                fileExecution();
+                try {
+//                    fileExecution();
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
             }
         }
     }
@@ -482,7 +532,6 @@ public class MainActivity extends FragmentActivity {
                     // TODO: Inform user that that your app will not show notifications.
                 }
             });
-
 
     /**
      * {@inheritDoc}
@@ -573,46 +622,67 @@ public class MainActivity extends FragmentActivity {
     @Override
     public void onPause() {
         this.unregisterReceiver(msgReceiver);
+        this.finish();
         super.onPause();
-    }
-
-    /**
-     * Register the app with ADM and send the registration ID to your server
-     */
-    public void register() {
-        final ADM adm = new ADM(this);
-        if (adm.isSupported()) {
-//            Toast.makeText(MainActivity.this, "==11", Toast.LENGTH_SHORT).show();
-            if (adm.getRegistrationId() == null) {
-//                Toast.makeText(MainActivity.this, "==22", Toast.LENGTH_SHORT).show();
-                adm.startRegister();
-            } else {
-                /* Send the registration ID for this app instance to your server. */
-                /* This is a redundancy since this should already have been performed at registration time from the onRegister() callback */
-                /* but we do it because our python server doesn't save registration IDs. */
-                final MyServerMsgHandler srv = new MyServerMsgHandler();
-                srv.registerAppInstance(getApplicationContext(), adm.getRegistrationId());
-                String token = adm.getRegistrationId();
-                if (!token.equals("")) {
-                    updatToken(apiInterface, token);
-                }
-                Toast.makeText(MainActivity.this, adm.getRegistrationId(), Toast.LENGTH_SHORT).show();
-            }
-        }
     }
 
     /**
      * Unregister the app with ADM.
      * Your server will get notified from the SampleADMMessageHandler:onUnregistered() callback
      */
-    private void unregister() {
-        final ADM adm = new ADM(this);
-        if (adm.isSupported()) {
-            if (adm.getRegistrationId() != null) {
-                adm.startUnregister();
+    private void setText(final ImageView imageView, final Boolean value) {
+        this.runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                if (value) {
+                    imageView.setVisibility(View.VISIBLE);
+                } else {
+                    imageView.setVisibility(View.GONE);
+                }
             }
-        }
-//        final TextView tView = (TextView)findViewById(R.id.textMsgServer);
-//        tView.append("You are now unregistered\n\n");
+        });
     }
+
+    private final static String BASE_URL = "https://video-dev.cleartwo.uk/api/v1/getFile/";
+    public static String FILE_URL = "";
+    public String desFilePath;
+
+    public void startDownload(String desFilePath) {
+//        download.setEnabled(false);
+        DownloadUtil.getInstance()
+                .downloadFile(new InputParameter.Builder(BASE_URL, FILE_URL, desFilePath)
+                        .setCallbackOnUiThread(true)
+                        .build(), new DownloadListener() {
+                    @Override
+                    public void onFinish(final File file) {
+                        Const.mainActivity.currentplaylist = "";
+                        Const.mainActivity.order = 1;
+                        Const.mainActivity.timerSchedule();
+                        Log.e("Tag", "下载的文件地址为:\n" + file.getAbsolutePath());
+                        schedule(apiInterface, MainActivity.this);
+                        try {
+                            progressdialog.dismiss();
+                        } catch (Exception ignored) {
+                        }
+                    }
+
+                    @Override
+                    public void onProgress(int progress, long downloadedLengthKb, long totalLengthKb) {
+                        try {
+                            progressdialog.show();
+                        } catch (Exception ignored) {
+                        }
+                        Log.e("Tag",
+                                String.format("文件文件下载进度：%d%s \n\n已下载:%sKB | 总长:%sKB",
+                                        progress, "%",
+                                        downloadedLengthKb + "",
+                                        totalLengthKb + ""));
+                    }
+
+                    @Override
+                    public void onFailed(String errMsg) {
+                    }
+                });
+    }
+
 }

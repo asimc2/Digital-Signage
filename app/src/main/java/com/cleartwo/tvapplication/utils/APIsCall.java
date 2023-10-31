@@ -1,9 +1,6 @@
 package com.cleartwo.tvapplication.utils;
 
 import static android.content.ContentValues.TAG;
-import static androidx.core.content.PackageManagerCompat.LOG_TAG;
-import static com.cleartwo.tvapplication.Const.DeleteFolder;
-import static com.cleartwo.tvapplication.Const.fileExist;
 import static com.cleartwo.tvapplication.Const.writeToDisk;
 import static com.cleartwo.tvapplication.utils.APIClient.APIKEY;
 import static com.cleartwo.tvapplication.utils.APIClient.APISECRET;
@@ -11,20 +8,29 @@ import static com.cleartwo.tvapplication.utils.APIClient.UNIID;
 
 import android.app.ProgressDialog;
 import android.content.Context;
+import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
-import android.os.Environment;
 import android.text.format.Formatter;
 import android.util.Log;
-import android.view.View;
 import android.widget.Toast;
 
+
+import com.cleartwo.tvapplication.BuildConfig;
 import com.cleartwo.tvapplication.Const;
 import com.cleartwo.tvapplication.MainActivity;
 import com.cleartwo.tvapplication.ReqResponse;
+import com.google.android.gms.common.util.ArrayUtils;
 import com.google.gson.Gson;
 
 import java.io.File;
-import java.util.Objects;
+import java.math.BigInteger;
+import java.net.Inet4Address;
+import java.net.InetAddress;
+import java.net.NetworkInterface;
+import java.net.SocketException;
+import java.net.UnknownHostException;
+import java.util.Collections;
+import java.util.Enumeration;
 
 import okhttp3.ResponseBody;
 import retrofit2.Call;
@@ -32,40 +38,7 @@ import retrofit2.Callback;
 import retrofit2.Response;
 
 public class APIsCall {
-
-    //How To Call
-    public static void download(APIInterface apiInterface, String fileUrl) {
-
-        apiInterface.downlload(APIKEY,
-                APISECRET,
-                UNIID,
-                APIClient.BASEURL + "getFile/" + fileUrl).enqueue(new Callback<ResponseBody>() {
-            @Override
-            public void onResponse(Call<ResponseBody> call, Response<ResponseBody> response) {
-                Log.d(TAG, "server contacted and has file");
-                try {
-                    Log.d(TAG, "server contacted and has file");
-                    assert response.body() != null;
-                    writeToDisk(response.body(), fileUrl);
-                    Log.d(TAG, "file downloaded ");
-
-//                    File file = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS), "ProfileImage02");
-                    File dir = Const.mainActivity.getFilesDir();
-                    File file = new File(dir, "my_filename");
-                    Const.mainActivity.currentplaylist = "";
-                    Const.mainActivity.order = 1;
-                    Const.mainActivity.timerSchedule();
-//                    }
-                } catch (Exception ignored) {
-                }
-            }
-
-            @Override
-            public void onFailure(Call<ResponseBody> call, Throwable t) {
-                Log.d(TAG, "server not contacted");
-            }
-        });
-    }
+    public static boolean clear_cache = false;
 
     //How To Call
     public static void schedule(APIInterface apiInterface, Context context) {
@@ -98,20 +71,41 @@ public class APIsCall {
                         for (int j = 0; j < reqResponse.getPlaylists().get(i).getFiles().size(); j++) {
 
 //                            Const.mainActivity.currentplaylist = "";
-                            File dir = Const.mainActivity.getFilesDir();
-                            File file = new File(dir, "my_filename");
-                            File imgFile = new File(file.getAbsolutePath() + "/" + reqResponse.getPlaylists().get(i).getFiles().get(j).getId());
+//                            File dir = Const.mainActivity.getFilesDir();
+//                            File file = new File(dir, "my_filename");
+//                            File imgFile = new File(file.getAbsolutePath() + "/" + reqResponse.getPlaylists().get(i).getFiles().get(j).getId());
+//                            if (!imgFile.exists()) {
+//                                APIsCall.download(apiInterface, reqResponse.getPlaylists().get(i).getFiles().get(j).getId());
+//                            }
+
+                            Const.mainActivity.desFilePath = Const.mainActivity.getExternalFilesDir(null).getAbsolutePath() + "/" + reqResponse.getPlaylists().get(i).getFiles().get(j).getId();
+                            File imgFile = new File(Const.mainActivity.desFilePath);
+                            MainActivity.FILE_URL = reqResponse.getPlaylists().get(i).getFiles().get(j).getId();
                             if (!imgFile.exists()) {
-                                APIsCall.download(apiInterface, reqResponse.getPlaylists().get(i).getFiles().get(j).getId());
+                                Const.mainActivity.startDownload(Const.mainActivity.desFilePath);
+                                break;
+                            } else if (clear_cache) {
+                                File myObj = new File(Const.mainActivity.desFilePath);
+                                if (myObj.delete()) {
+                                    System.out.println("Deleted the file: " + myObj.getName());
+                                } else {
+                                    System.out.println("Failed to delete the file.");
+                                }
                             }
                         }
                     }
 
+                    if (clear_cache) {
+                        clear_cache = false;
+                        schedule(apiInterface, context);
+                    }
                     Log.d(TAG, "server contacted and has file");
                 } catch (Exception e) {
                     Toast.makeText(context, "Some thing went wrong", Toast.LENGTH_SHORT).show();
+
 //                    SharedPrefHelper.saveData(context, "unit_id", "");
 //                    Const.mainActivity.initView();
+
                 }
             }
 
@@ -125,6 +119,8 @@ public class APIsCall {
     }
 
     //How To Call
+    public static boolean onTimeCall = true;
+
     public static void updatToken(APIInterface apiInterface, String token) {
         String device = "Android";
         if (Const.isKindle()) {
@@ -137,15 +133,20 @@ public class APIsCall {
                 token,
                 device,
                 APIClient.BASEURL + "reportToken/" + UNIID
-                ).enqueue(new Callback<ResponseBody>() {
+        ).enqueue(new Callback<ResponseBody>() {
             @Override
             public void onResponse(Call<ResponseBody> call, Response<ResponseBody> response) {
                 try {
                     Log.d(TAG, "server contacted and has file");
-
                     assert response.body() != null;
-                    sendReportIP(apiInterface);
+                    if (onTimeCall) {
+                        sendReportIP(apiInterface);
+                        onTimeCall = false;
+                    } else {
+                        onTimeCall = true;
+                    }
                     Log.d(TAG, "file downloaded ");
+                    CollectionStartUp(apiInterface);
                 } catch (Exception ignored) {
                 }
             }
@@ -161,13 +162,11 @@ public class APIsCall {
         ProgressDialog progressdialog = new ProgressDialog(context);
         progressdialog.setMessage("Please Wait....");
         progressdialog.show();
-
         apiInterface.getUnitCode(code).enqueue(new Callback<ReqResponse>() {
             @Override
             public void onResponse(Call<ReqResponse> call, Response<ReqResponse> response) {
                 try {
                     Log.d(TAG, "server contacted and has file");
-
                     ReqResponse resBody = response.body();
                     assert resBody != null;
                     if (resBody.getMessage().equals("success")) {
@@ -196,14 +195,12 @@ public class APIsCall {
 
     //How To Call
     public static void sendReportIP(APIInterface apiInterface) {
-        Context context = Const.mainActivity.getApplicationContext();
-        WifiManager wm = (WifiManager) context.getSystemService(Context.WIFI_SERVICE);
-        String ip = Formatter.formatIpAddress(wm.getConnectionInfo().getIpAddress());
+        String myIP = getLocalIpAddress();
 
         apiInterface.postReportIP(APIKEY,
                 APISECRET,
                 UNIID,
-                ip,
+                myIP,
                 APIClient.BASEURL + "reportIP/" + UNIID).enqueue(new Callback<ReqResponse>() {
             @Override
             public void onResponse(Call<ReqResponse> call, Response<ReqResponse> response) {
@@ -213,14 +210,80 @@ public class APIsCall {
                     ReqResponse resBody = response.body();
                     Log.d(TAG, "" + resBody);
                     Log.d(TAG, "" + resBody);
-//                    assert resBody != null;
                 } catch (Exception ignored) {
                 }
             }
 
             @Override
             public void onFailure(Call<ReqResponse> call, Throwable t) {
+            }
+        });
+    }
+    public static String getLocalIpAddress() {
+        try {
+            for (Enumeration<NetworkInterface> en = NetworkInterface.getNetworkInterfaces(); en.hasMoreElements();) {
+                NetworkInterface intf = en.nextElement();
+                for (Enumeration<InetAddress> enumIpAddr = intf.getInetAddresses(); enumIpAddr.hasMoreElements();) {
+                    InetAddress inetAddress = enumIpAddr.nextElement();
+                    if (!inetAddress.isLoopbackAddress() && inetAddress instanceof Inet4Address) {
+                        return inetAddress.getHostAddress();
+                    }
+                }
+            }
+        } catch (SocketException ex) {
+            ex.printStackTrace();
+        }
+        return null;
+    }
 
+    //How To Call
+    public static void updateStatus(APIInterface apiInterface) {
+        Log.d(TAG, "server contacted and request is report_status");
+        String versionName = BuildConfig.VERSION_NAME;
+        String deviceName = android.os.Build.MODEL;
+        apiInterface.updateAppStatus(APIKEY,
+                APISECRET,
+                UNIID,
+                UNIID,
+                deviceName,
+                versionName).enqueue(new Callback<ResponseBody>() {
+            @Override
+            public void onResponse(Call<ResponseBody> call, Response<ResponseBody> response) {
+                try {
+                    Log.d(TAG, "server contacted and has file");
+
+                    ResponseBody resBody = response.body();
+                    Log.d(TAG, "" + resBody);
+                    Log.d(TAG, "" + resBody);
+                } catch (Exception ignored) {
+                }
+            }
+
+            @Override
+            public void onFailure(Call<ResponseBody> call, Throwable t) {
+            }
+        });
+    }
+
+    //How To Call
+    public static void CollectionStartUp(APIInterface apiInterface) {
+        Log.d(TAG, "server contacted and request is report_status");
+        apiInterface.collectionStartUp(
+                APIClient.BASEURL + "startUp/" + UNIID).enqueue(new Callback<ResponseBody>() {
+            @Override
+            public void onResponse(Call<ResponseBody> call, Response<ResponseBody> response) {
+                try {
+                    Log.d(TAG, "server contacted and has file");
+
+                    ResponseBody resBody = response.body();
+                    Log.d(TAG, "" + resBody);
+                    Log.d(TAG, "" + resBody);
+                } catch (Exception ignored) {
+                }
+            }
+
+            @Override
+            public void onFailure(Call<ResponseBody> call, Throwable t) {
             }
         });
     }

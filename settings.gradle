@@ -18,3 +18,4 @@ dependencyResolutionManagement {
 }
 rootProject.name = "TestingTvApplication"
 include ':app'
+include ':library'

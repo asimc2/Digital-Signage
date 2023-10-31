@@ -14,4 +14,9 @@
     -->
     <string name="server_address">INSERT_SERVER_ADDRESS_HERE</string>
     <string name="server_port">8080</string>
+    <string name="enter_your_device_code">Enter your device code</string>
+    <string name="powerd_by_cleartwo">powerd by ClearTwo: </string>
+    <string name="go">GO</string>
+    <string name="message">Message</string>
+    <string name="title">Title</string>
 </resources>

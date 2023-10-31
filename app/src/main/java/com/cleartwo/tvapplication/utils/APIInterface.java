@@ -36,4 +36,13 @@ public interface APIInterface {
     Call<ReqResponse> postReportIP(@Header("apikey") String apikey, @Header("apisecret") String apisecret,
                                    @Header("unitid") String unitid,@Field("ipaddress") String ipaddress,
                                    @Url String fileUrl);
+
+    @FormUrlEncoded
+    @POST("postReportStatus")
+    Call<ResponseBody> updateAppStatus(@Header("apikey") String apikey, @Header("apisecret") String apisecret,
+                                 @Header("unitid") String unitid, @Field("unitId") String unitId,
+                                       @Field("name") String name, @Field("version") String version);
+
+    @GET
+    Call<ResponseBody> collectionStartUp(@Url String fileUrl);
 }

@@ -2,48 +2,55 @@ package com.cleartwo.tvapplication.amazon;
 
 import static com.cleartwo.tvapplication.FirebaseMessageReceiver.triggerFinish;
 import static com.cleartwo.tvapplication.FirebaseMessageReceiver.triggerRebirth;
+import static com.cleartwo.tvapplication.utils.APIsCall.clear_cache;
 import static com.cleartwo.tvapplication.utils.APIsCall.schedule;
+import static com.cleartwo.tvapplication.utils.APIsCall.updateStatus;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
-import android.widget.Toast;
 
 import com.amazon.device.messaging.ADMConstants;
 import com.amazon.device.messaging.ADMMessageHandlerJobBase;
 import com.cleartwo.tvapplication.Const;
-import com.cleartwo.tvapplication.MainActivity;
 import com.cleartwo.tvapplication.R;
+import com.cleartwo.tvapplication.utils.SharedPrefHelper;
 
+import java.util.Calendar;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
+import java.util.Timer;
+import java.util.TimerTask;
 
 /**
  * The SampleADMMessageHandlerJobBase class receives messages sent by ADM via the SampleADMMessageReceiver receiver.
  *
  * @version Revision: 1, Date: 11/20/2019
  */
-public class SampleADMMessageHandlerJobBase extends ADMMessageHandlerJobBase
-{
-    /** Tag for logs. */
+
+public class SampleADMMessageHandlerJobBase extends ADMMessageHandlerJobBase {
+    /**
+     * Tag for logs.
+     */
     private final static String TAG = "ADMSampleJobBase";
 
     /**
      * Class constructor.
      */
-    public SampleADMMessageHandlerJobBase()
-    {
+    public SampleADMMessageHandlerJobBase() {
         super();
     }
 
-    /** {@inheritDoc} */
-    @SuppressLint("LongLogTag")
+    /**
+     * {@inheritDoc}
+     */
+    @SuppressLint({"LongLogTag", "SimpleDateFormat"})
     @Override
-    protected void onMessage(final Context context, final Intent intent)
-    {
+    protected void onMessage(final Context context, final Intent intent) {
         Log.i(TAG, "SampleADMMessageHandlerJobBase:onMessage");
 //        Const.mainActivity.finish();
         /* String to access message field from data JSON. */
@@ -64,8 +71,7 @@ public class SampleADMMessageHandlerJobBase extends ADMMessageHandlerJobBase
         final String msg = extras.getString(msgKey);
         final String time = extras.getString("123");
 
-        if (msg == null || time == null)
-        {
+        if (msg == null || time == null) {
             Log.w(TAG, "SampleADMMessageHandlerJobBase:onMessage Unable to extract message data." +
                     "Make sure that msgKey and timeKey values match data elements of your JSON message");
         }
@@ -73,7 +79,6 @@ public class SampleADMMessageHandlerJobBase extends ADMMessageHandlerJobBase
         /* Create a notification with message data. */
         /* This is required to test cases where the app or device may be off. */
         ADMHelper.createADMNotification(context, msgKey, timeKey, intentAction, msg, time);
-
 
         if (msg != null) {
 //            Const.mainActivity.methodInit("android.resource://" + getPackageName() + "/" + R.raw.archies1);
@@ -84,18 +89,51 @@ public class SampleADMMessageHandlerJobBase extends ADMMessageHandlerJobBase
                 Const.mainActivity.order = 1;
                 schedule(Const.mainActivity.apiInterface, Const.mainActivity);
             } else if (msg.equals("restart_app")) {
-                triggerRebirth(Const.mainActivity);
+                boolean i = true;
+
+                Timer timer = new Timer();
+                Calendar calendar = Calendar.getInstance(); // gets a calendar using the default time zone and locale.
+                calendar.set(Calendar.SECOND, 0);
+                calendar.add(Calendar.MINUTE, 1);
+                calendar.set(Calendar.MILLISECOND, 0);
+                Date date = calendar.getTime();
+                timer.schedule(new TimerTask() {
+                    @Override
+                    public void run() {
+                        triggerRebirth(Const.mainActivity);
+                    }
+                }, date);
+
+//                while (i) {
+//
+//                    int seconds = Calendar.getInstance().get(Calendar.SECOND);
+//                        if (seconds == 0 || seconds == 10 || seconds == 20 || seconds == 30 || seconds == 40 || seconds == 50) {
+//                            triggerRebirth(Const.mainActivity);
+//                            i = false;
+//                        }
+//                }
+
             } else if (msg.equals("shutdown_app")) {
                 triggerFinish(Const.mainActivity);
             } else if (msg.equals("update_app")) {
 //                Log.d("TAG", "From: " + remoteMessage.getFrom());
 //                startActivity(new Intent(this, MainActivity.class));
+            } else if (msg.equals("report_status")) {
+                updateStatus(Const.mainActivity.apiInterface);
+            } else if (msg.equals("clear_cache")) {
+                clear_cache = true;
+                Const.mainActivity.currentplaylist = "";
+                Const.mainActivity.order = 1;
+                schedule(Const.mainActivity.apiInterface, Const.mainActivity);
+            } else if (msg.equals("logout")) {
+                SharedPrefHelper.saveData(context, "unit_id", "");
+                Const.mainActivity.initView();
             }
+
             // Since the notification is received directly from
             // FCM, the title and the body can be fetched
             // directly as below.
             Log.e("remoteMessage.getNotification().getTitle()", msg);
-            Log.e("remoteMessage.getNotification().getBody()", msg);
             Log.e("remoteMessage.getNotification().getBody()", msg);
 //            showNotification(
 //                    remoteMessage.getNotification().getTitle(),
@@ -108,17 +146,14 @@ public class SampleADMMessageHandlerJobBase extends ADMMessageHandlerJobBase
      *
      * @param extras Extra that was included with the intent.
      */
-    private void verifyMD5Checksum(final Context context, final Bundle extras)
-    {
+    private void verifyMD5Checksum(final Context context, final Bundle extras) {
         /* String to access consolidation key field from data JSON. */
         final String consolidationKey = context.getString(R.string.json_data_consolidation_key);
 
         final Set<String> extrasKeySet = extras.keySet();
         final Map<String, String> extrasHashMap = new HashMap<String, String>();
-        for (String key : extrasKeySet)
-        {
-            if (!key.equals(ADMConstants.EXTRA_MD5) && !key.equals(consolidationKey))
-            {
+        for (String key : extrasKeySet) {
+            if (!key.equals(ADMConstants.EXTRA_MD5) && !key.equals(consolidationKey)) {
                 extrasHashMap.put(key, extras.getString(key));
             }
         }
@@ -130,26 +165,27 @@ public class SampleADMMessageHandlerJobBase extends ADMMessageHandlerJobBase
         Log.i(TAG, "SampleADMMessageHandlerJobBase:onMessage ADM md5: " + admMd5);
 
         /* Data integrity check. */
-        if(!admMd5.trim().equals(md5.trim()))
-        {
+        if (!admMd5.trim().equals(md5.trim())) {
             Log.w(TAG, "SampleADMMessageHandlerJobBase:onMessage MD5 checksum verification failure. " +
                     "Message received with errors");
         }
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
-    protected void onRegistrationError(final Context context, final String string)
-    {
+    protected void onRegistrationError(final Context context, final String string) {
         Log.e(TAG, "SampleADMMessageHandlerJobBase:onRegistrationError " + string);
         Log.e(TAG, "SampleADMMessageHandlerJobBase:onRegistrationError " + string);
 //        Toast.makeText(Const.mainActivity, "onRegistrationError ==33333", Toast.LENGTH_SHORT).show();
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
-    protected void onRegistered(final Context context, final String registrationId)
-    {
+    protected void onRegistered(final Context context, final String registrationId) {
         Log.i(TAG, "SampleADMMessageHandlerJobBase:onRegistered");
         Log.i(TAG, registrationId);
 
@@ -159,10 +195,11 @@ public class SampleADMMessageHandlerJobBase extends ADMMessageHandlerJobBase
         srv.registerAppInstance(context.getApplicationContext(), registrationId);
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
-    protected void onUnregistered(final Context context, final String registrationId)
-    {
+    protected void onUnregistered(final Context context, final String registrationId) {
         Log.i(TAG, "SampleADMMessageHandlerJobBase:onUnregistered");
 
         /* Unregister the app instance's registration ID with your server. */
@@ -170,4 +207,12 @@ public class SampleADMMessageHandlerJobBase extends ADMMessageHandlerJobBase
         srv.unregisterAppInstance(context.getApplicationContext(), registrationId);
     }
 
+    //The task which you want to execute
+    private static class MyTimeTask extends TimerTask {
+
+        public void run() {
+            //write your code here
+            triggerRebirth(Const.mainActivity);
+        }
+    }
 }

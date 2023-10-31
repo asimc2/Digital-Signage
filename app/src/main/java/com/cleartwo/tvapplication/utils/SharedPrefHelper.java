@@ -35,8 +35,13 @@ public class SharedPrefHelper {
         if (obj == null){
             return null;
         }else {
-            ReqResponse objData = new Gson().fromJson(obj.toString(), ReqResponse.class);
-            return objData;
+            try {
+                ReqResponse objData = new Gson().fromJson(obj.toString(), ReqResponse.class);
+                return objData;
+            }catch (Exception e) {
+                ReqResponse objData = new Gson().fromJson(json, ReqResponse.class);
+                return objData;
+            }
         }
     }
     public static void saveData(Context context, String key,String value) {

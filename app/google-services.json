@@ -73,6 +73,14 @@
       },
       "oauth_client": [
         {
+          "client_id": "580133661529-7ptm7d400frockaip7kagmnloln902uj.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.cleartwo.tvapplication",
+            "certificate_hash": "726e36c78461177f77b3dabf2aad1e044f804fab"
+          }
+        },
+        {
           "client_id": "580133661529-t8dj95qrakk0uicukg27rjerl0r2b5q6.apps.googleusercontent.com",
           "client_type": 3
         }

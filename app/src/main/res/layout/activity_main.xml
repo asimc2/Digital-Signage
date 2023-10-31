@@ -12,38 +12,49 @@
         android:text="Hello World!"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"/>
+        app:layout_constraintStart_toStartOf="parent" />
 
     <VideoView
         android:id="@+id/simpleVideoView"
         android:layout_width="fill_parent"
         android:layout_height="fill_parent"
         tools:ignore="MissingConstraints" />
+
     <ImageView
         android:id="@+id/imageView"
         android:layout_width="match_parent"
-        android:background="@android:color/black"
         android:layout_height="match_parent"
+        android:background="@android:color/black"
+        tools:ignore="ContentDescription" />
+
+    <WebView
+        android:id="@+id/webUrl"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@android:color/black"
+        android:visibility="gone"
         tools:ignore="ContentDescription" />
 
     <RelativeLayout
         android:id="@+id/firstInstall"
         android:layout_width="match_parent"
-        android:padding="8dp"
         android:layout_height="match_parent"
-        android:background="@android:color/white">
+        android:background="@android:color/white"
+        android:padding="8dp">
 
         <EditText
             android:id="@+id/unitId"
             android:layout_width="450dp"
             android:layout_height="wrap_content"
             android:layout_centerHorizontal="true"
+            android:ellipsize="end"
             android:gravity="center"
+            android:hint="@string/enter_your_device_code"
             android:lines="1"
-            android:hint="Enter your device code"
+            android:maxLines="1"
+            android:singleLine="true"
             android:textColor="@android:color/black"
-            android:textColorHint="@color/grey">
-        </EditText>
+            android:textColorHint="@color/grey" />
 
         <Button
             android:id="@+id/go"
@@ -53,26 +64,27 @@
             android:layout_centerHorizontal="true"
             android:layout_marginTop="8dp"
             android:background="@android:color/black"
-            android:text="GO"
+            android:text="@string/go"
             android:textColor="@android:color/white" />
 
         <ImageView
             android:layout_width="match_parent"
             android:layout_height="match_parent"
+            android:layout_above="@+id/clears"
             android:layout_below="@+id/go"
             android:src="@mipmap/ic_launcher_foreground"
-            android:layout_above="@+id/clears"
             tools:ignore="ContentDescription" />
+
         <TextView
             android:id="@+id/clears"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="powerd by ClearTwo: 1.0"
+            android:layout_alignParentBottom="true"
+            android:textSize="26dp"
             android:gravity="center"
-            android:textStyle="bold"
+            android:text="@string/powerd_by_cleartwo"
             android:textColor="@color/black"
-            android:layout_alignParentBottom="true"/>
+            android:textStyle="bold" />
     </RelativeLayout>
-
 
 </androidx.constraintlayout.widget.ConstraintLayout>

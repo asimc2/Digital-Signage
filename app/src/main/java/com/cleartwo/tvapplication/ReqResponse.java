@@ -1,12 +1,13 @@
 package com.cleartwo.tvapplication;
 
+import androidx.annotation.Keep;
+
 import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;
 
 import java.util.List;
 
-
-
+@Keep
 public class ReqResponse {
 
     @SerializedName("message")
@@ -76,6 +77,7 @@ public class ReqResponse {
         this.defaultplaylist = defaultplaylist;
     }
 
+    @Keep
     public class Schedule {
 
         @SerializedName("Monday")
@@ -158,6 +160,7 @@ public class ReqResponse {
 
     }
 
+    @Keep
     public class Sunday {
 
         @SerializedName("start")
@@ -196,6 +199,7 @@ public class ReqResponse {
 
     }
 
+    @Keep
     public class Thursday {
 
         @SerializedName("start")
@@ -234,6 +238,7 @@ public class ReqResponse {
 
     }
 
+    @Keep
     public class Tuesday {
 
         @SerializedName("start")
@@ -272,6 +277,7 @@ public class ReqResponse {
 
     }
 
+    @Keep
     public class Wednesday {
 
         @SerializedName("start")
@@ -309,6 +315,7 @@ public class ReqResponse {
         }
     }
 
+    @Keep
     public class Saturday {
 
         @SerializedName("start")
@@ -347,6 +354,7 @@ public class ReqResponse {
 
     }
 
+    @Keep
     public class Friday {
 
         @SerializedName("start")
@@ -385,6 +393,7 @@ public class ReqResponse {
 
     }
 
+    @Keep
     public class Monday {
 
         @SerializedName("start")
@@ -423,6 +432,7 @@ public class ReqResponse {
 
     }
 
+    @Keep
     public class Start {
 
         @SerializedName("hour")
@@ -450,6 +460,7 @@ public class ReqResponse {
 
     }
 
+    @Keep
     public class End {
 
         @SerializedName("hour")
@@ -477,6 +488,7 @@ public class ReqResponse {
 
     }
 
+    @Keep
     public class File {
 
         @SerializedName("id")
@@ -488,6 +500,12 @@ public class ReqResponse {
         @SerializedName("ext")
         @Expose
         private String ext;
+        @SerializedName("time")
+        @Expose
+        private String time;
+        @SerializedName("url")
+        @Expose
+        private String url;
 
         public String getId() {
             return id;
@@ -513,26 +531,24 @@ public class ReqResponse {
             this.ext = ext;
         }
 
+        public String getTime() {
+            return time;
+        }
+
+        public void setTime(String time) {
+            this.time = time;
+        }
+
+        public String getUrl() {
+            return url;
+        }
+
+        public void setUrl(String url) {
+            this.url = url;
+        }
     }
 
-
-
-//    public class Playlist {
-//
-//        @SerializedName("id")
-//        @Expose
-//        private String id;
-//
-//        public String getId() {
-//            return id;
-//        }
-//
-//        public void setId(String id) {
-//            this.id = id;
-//        }
-//
-//    }
-
+    @Keep
     public class Playlist {
 
         @SerializedName("id")
@@ -560,6 +576,7 @@ public class ReqResponse {
 
     }
 
+    @Keep
     public class Defaultplaylist {
 
         @SerializedName("id")

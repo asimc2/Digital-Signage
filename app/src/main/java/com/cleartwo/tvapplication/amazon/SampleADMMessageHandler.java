@@ -10,7 +10,6 @@ import android.widget.Toast;
 import com.amazon.device.messaging.ADMConstants;
 import com.amazon.device.messaging.ADMMessageHandlerBase;
 import com.cleartwo.tvapplication.Const;
-import com.cleartwo.tvapplication.MainActivity;
 import com.cleartwo.tvapplication.R;
 
 import java.util.HashMap;
@@ -22,16 +21,16 @@ import java.util.Set;
  *
  * @version Revision: 1, Date: 11/11/2012
  */
-public class SampleADMMessageHandler extends ADMMessageHandlerBase
-{
-    /** Tag for logs. */
+public class SampleADMMessageHandler extends ADMMessageHandlerBase {
+    /**
+     * Tag for logs.
+     */
     private final static String TAG = "ADMSampleIntentBase";
 
     /**
      * Class constructor.
      */
-    public SampleADMMessageHandler()
-    {
+    public SampleADMMessageHandler() {
         super(SampleADMMessageHandler.class.getName());
     }
 
@@ -40,15 +39,15 @@ public class SampleADMMessageHandler extends ADMMessageHandlerBase
      *
      * @param className The name of the class.
      */
-    public SampleADMMessageHandler(final String className)
-    {
+    public SampleADMMessageHandler(final String className) {
         super(className);
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
-    protected void onMessage(final Intent intent)
-    {
+    protected void onMessage(final Intent intent) {
         Log.i(TAG, "SampleADMMessageHandler:onMessage");
 
         /* String to access message field from data JSON. */
@@ -69,8 +68,7 @@ public class SampleADMMessageHandler extends ADMMessageHandlerBase
         final String msg = extras.getString(msgKey);
         final String time = extras.getString(timeKey);
 
-        if (msg == null || time == null)
-        {
+        if (msg == null || time == null) {
             Log.w(TAG, "SampleADMMessageHandler:onMessage Unable to extract message data." +
                     "Make sure that msgKey and timeKey values match data elements of your JSON message");
         }
@@ -99,17 +97,14 @@ public class SampleADMMessageHandler extends ADMMessageHandlerBase
      *
      * @param extras Extra that was included with the intent.
      */
-    private void verifyMD5Checksum(final Bundle extras)
-    {
+    private void verifyMD5Checksum(final Bundle extras) {
         /* String to access consolidation key field from data JSON. */
         final String consolidationKey = getString(R.string.json_data_consolidation_key);
 
         final Set<String> extrasKeySet = extras.keySet();
         final Map<String, String> extrasHashMap = new HashMap<String, String>();
-        for (String key : extrasKeySet)
-        {
-            if (!key.equals(ADMConstants.EXTRA_MD5) && !key.equals(consolidationKey))
-            {
+        for (String key : extrasKeySet) {
+            if (!key.equals(ADMConstants.EXTRA_MD5) && !key.equals(consolidationKey)) {
                 extrasHashMap.put(key, extras.getString(key));
             }
         }
@@ -121,25 +116,26 @@ public class SampleADMMessageHandler extends ADMMessageHandlerBase
         Log.i(TAG, "SampleADMMessageHandler:onMessage ADM md5: " + admMd5);
 
         /* Data integrity check. */
-        if(!admMd5.trim().equals(md5.trim()))
-        {
+        if (!admMd5.trim().equals(md5.trim())) {
             Log.w(TAG, "SampleADMMessageHandler:onMessage MD5 checksum verification failure. " +
                     "Message received with errors");
         }
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
-    protected void onRegistrationError(final String string)
-    {
+    protected void onRegistrationError(final String string) {
         Log.e(TAG, "SampleADMMessageHandler:onRegistrationError " + string);
         Toast.makeText(Const.mainActivity, "SampleADMMessageHandler:onRegistrationError" + string, Toast.LENGTH_SHORT).show();
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
-    protected void onRegistered(final String registrationId)
-    {
+    protected void onRegistered(final String registrationId) {
         Log.i(TAG, "SampleADMMessageHandler:onRegistered");
         Log.i(TAG, registrationId);
 
@@ -153,10 +149,11 @@ public class SampleADMMessageHandler extends ADMMessageHandlerBase
         srv.registerAppInstance(getApplicationContext(), registrationId);
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
-    protected void onUnregistered(final String registrationId)
-    {
+    protected void onUnregistered(final String registrationId) {
         Log.i(TAG, "SampleADMMessageHandler:onUnregistered");
 
         /* Unregister the app instance's registration ID with your server. */
